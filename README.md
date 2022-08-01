@@ -1,0 +1,1 @@
+# A database wrapper for mysqli in php for basic db tasks
