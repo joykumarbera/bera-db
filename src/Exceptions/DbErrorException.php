@@ -2,4 +2,4 @@
 
 namespace Bera\Db\Exceptions;
 
-class DbErrorException extends \Exception {}
+class DbErrorException extends \RuntimeException {}

@@ -108,7 +108,7 @@ class Db {
      * @param string $table
      * @param array $data
      * 
-     * @return DB
+     * @return Db
      */
     public function insert($table, $data = [])
     {
@@ -131,29 +131,30 @@ class Db {
      * @param array $data
      * @param array $conditions
      * 
-     * @return DB
+     * @return Db
      */
-    public function update($table, $data = [], $conditions = [])
+    public function update($table, $data = [], $conditions = [], $glue = 'AND')
     {
-        $updates = '';
+        $update_columns = '';
         if(!empty($data)) {
             foreach($data as $column => $value) {
-                $updates .= '`' . $column . '`' . ' = ' . '?,';
+                $update_columns .= '`' . $column . '`' . ' = ' . '?,';
             }
-            $updates = rtrim($updates, ',');
+            $update_columns = rtrim($update_columns, ',');
         }
 
         if(!empty($conditions)) {
             $where_clause = '';
             foreach($conditions as $key => $value) {
-                $where_clause .= '`' . $key . '`' . ' = ' . '?,';
+                $where_clause .= '`' . $key . '`' . ' = ' . '? ' . $glue;
             }
-            $where_clause = rtrim($where_clause, ',');
+
+            $where_clause = rtrim($where_clause, " $glue");
         } else {
-            $where_clause = '1';
+            $where_clause = 1;
         }
 
-        $sql = "UPDATE $table SET $updates WHERE $where_clause";
+        $sql = "UPDATE $table SET $update_columns WHERE $where_clause";
 
         return $this->query($sql, array_merge( array_values($data), array_values($conditions)));
     }
@@ -164,18 +165,19 @@ class Db {
      * @param string $table
      * @param array $conditions
      * 
-     * @return DB
+     * @return Db
      */
-    public function delete($table, $conditions=[])
+    public function delete($table, $conditions=[], $glue = 'AND')
     {
         if(!empty($conditions)) {
             $where_clause = '';
-            foreach($conditions as $column => $value) {
-                $where_clause .= '`' . $column . '`' . ' = ' . '?,';
+            foreach($conditions as $key => $value) {
+                $where_clause .= '`' . $key . '`' . ' = ' . '? ' . $glue;
             }
-            $where_clause = rtrim($where_clause, ',');
+
+            $where_clause = rtrim($where_clause, " $glue");
         } else {
-            $where_clause = '1';
+            $where_clause = 1;
         }
 
         $sql = "DELETE FROM $table WHERE $where_clause";
@@ -184,11 +186,34 @@ class Db {
     }
 
     /**
+     * Delete data using AND as a glue
+     * 
+     * @param string $table
+     * @param array $conditions
+     */
+    public function deleteUsingAnd($table, $conditions=[]) 
+    {
+        $this->delete($table, $conditions, 'AND');
+    }
+
+    /**
+     * Delete data using OR as a glue
+     * 
+     * @param string $table
+     * @param array $conditions
+     */
+    public function deleteUsingOr($table, $conditions=[]) 
+    {
+        $this->delete($table, $conditions, 'OR');
+    }
+
+    /**
      * Run a query
      * 
      * @param string $sql
      * @param array $params
-     * @return DB
+     * 
+     * @return Db
      * 
      * @throws Exception
      */
@@ -234,27 +259,35 @@ class Db {
      */
     public function getNumRows() 
     {
+        if( $this->stmt == null ) {
+            return 0;
+        }
+
         return $this->stmt->affected_rows;
     }
 
     /**
-     * Get one record as array
+     * Get single record as an array
      * 
      * @return array
      */
     public function one() 
     {
-        return $this->query_result->fetch_assoc();
+        if( $this->query_result ) {
+            return $this->query_result->fetch_assoc();
+        }
     }
 
     /**
-     * Get one record as object
+     * Get single record as an object
      * 
      * @return object
      */
     public function oneAsObject()
     {
-        return $this->query_result->fetch_object();
+        if( $this->query_result ) {
+            return $this->query_result->fetch_object();
+        }
     }
 
     /**
@@ -264,11 +297,13 @@ class Db {
      */
     public function all() 
     {
-        return $this->query_result->fetch_all(MYSQLI_ASSOC);
+        if( $this->query_result ) {
+            return $this->query_result->fetch_all(MYSQLI_ASSOC);
+        }
     }
 
     /**
-     * Start a db transaction
+     * Beginb a db transaction
      */
     public function start_transaction()
     {
@@ -285,8 +320,7 @@ class Db {
             $this->con->commit();
         } catch( mysqli_sql_exception $e ) {
             $this->con->rollback();
-
-            throw $e;
+            throw new \Bera\Db\Exceptions\DbErrorException($e->getMessage());
         }
     }
 }
