@@ -26,7 +26,7 @@ A simple mysql database warpper for php
 Install by using composer
 
 ```bash
-  composer install bera-db
+  composer require bera/bera-db
 ```
     
 ## Usage/Examples
