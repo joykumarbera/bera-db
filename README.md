@@ -115,7 +115,7 @@ $db->query('SELECT * FROM songs')->all()
 ```php
  $db->deleteUsingOr($table, $conditions=[])
 ```
-#### Run q query
+#### Run raw query
 
 ```php
  $db->query($sql, $params = [])
