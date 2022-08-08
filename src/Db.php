@@ -336,7 +336,7 @@ class Db {
     }
 
     /**
-     * Beginb a db transaction
+     * Begin a db transaction
      */
     public function start_transaction()
     {
