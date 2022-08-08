@@ -3,6 +3,7 @@
     "description": "A simple database abstraction layer",
     "type": "library",
     "license": "MIT",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Bera\\Db\\": "src/"
