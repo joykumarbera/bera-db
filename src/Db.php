@@ -3,6 +3,7 @@
 namespace Bera\Db;
 
 use Bera\Db\Exceptions\DbErrorException;
+use mysqli_driver;
 use mysqli_sql_exception;
 
 /**
@@ -32,6 +33,16 @@ class Db {
     private $db_password;
 
     /**
+     * @param bool $debug
+     */
+    private $debug;
+
+    /**
+     * @param int $port
+     */
+    private $port;
+
+    /**
      * @param mysqli $con
      */
     private $con;
@@ -52,6 +63,11 @@ class Db {
     private $query_result;
 
     /**
+     * @param mysqli_driver $mysqli_driver
+     */
+    private $mysqli_driver;
+
+    /**
      * Constructor
      * 
      * @param string $dbname
@@ -59,26 +75,33 @@ class Db {
      * @param string $user
      * @param string $password
      */
-    public function __construct($db_name = '', $db_host = 'localhost', $db_user = 'root', $db_password = '')
+    public function __construct(string $db_name = '', string $db_host = 'localhost', string $db_user = 'root', string $db_password = '', $port = null, bool $debug = false)
     {
         $this->db_name = $db_name;
         $this->db_host = $db_host;
         $this->db_user = $db_user;
         $this->db_password = $db_password;
+        $this->port = $port;
 
+        $this->setDebugMode($debug);
         $this->checkMysqliExtensionEnabledOrNot();
         $this->initConnecton();
+    }
+
+    public function setDebugMode($debug)
+    {
+        $this->debug = $debug;
     }
 
     /**
      * Check if mysqli extension is enabled or not
      * 
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     private function checkMysqliExtensionEnabledOrNot() 
     {
         if( !extension_loaded('mysqli') ) {
-            throw new \Exception("mysqli extension is not enabled");
+            throw new \RuntimeException("mysqli extension is not enabled");
         }
     }
 
@@ -88,13 +111,21 @@ class Db {
      * @throws DbErrorException
      */
     private function initConnecton()
-    {
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+    {   
+        $this->mysqli_driver = new mysqli_driver();
+
+        if($this->debug) {
+            $this->mysqli_driver->report_mode = MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT;
+        } else{
+            $this->mysqli_driver->report_mode = MYSQLI_REPORT_OFF;
+        }
+        
         $this->con = new \mysqli(
             $this->db_host,
             $this->db_user,
             $this->db_password,
-            $this->db_name
+            $this->db_name,
+            $this->port
         );
 
         if($this->con->errno !== 0) {
@@ -215,17 +246,20 @@ class Db {
      * 
      * @return Db
      * 
-     * @throws Exception
+     * @throws DbErrorException
      */
     public function query($sql, $params = [])
     {
         $this->sql = $sql;
-        $this->stmt = $this->con->prepare($this->sql);
-
-        if($this->stmt === false) {
+        try {
+            $this->stmt = $this->con->prepare($this->sql);
+            if($this->stmt === false) {
+                throw new DbErrorException('DB error :: ' . $this->con->error );
+            }
+        } catch(mysqli_sql_exception $e) {
             throw new DbErrorException('DB error :: ' . $this->con->error );
         }
-
+       
         if( !empty($params) ) {
             $type_str = '';
             foreach($params as $value) {
@@ -245,7 +279,6 @@ class Db {
 
         if($this->stmt->execute()) {
             $this->query_result = $this->stmt->get_result();
-
             return $this;
         } else {
             throw new DbErrorException("DB error :: " . $this->stmt->error);
@@ -313,6 +346,8 @@ class Db {
     /**
      * End a db transaction commit the changes and if anything
      * goes wrong then rollback the current changes
+     * 
+     * @throws \Bera\Db\Exceptions\DbErrorException
      */
     public function end_transaction()
     {
@@ -320,7 +355,7 @@ class Db {
             $this->con->commit();
         } catch( mysqli_sql_exception $e ) {
             $this->con->rollback();
-            throw new \Bera\Db\Exceptions\DbErrorException($e->getMessage());
+            throw new DbErrorException($e->getMessage());
         }
     }
 }
