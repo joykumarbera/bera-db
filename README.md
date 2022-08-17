@@ -18,7 +18,7 @@ A simple mysql database warpper for php
 ## Features
 
 - Simple Interface
-- Add, Edit, Delete, Query method
+- Add, Edit, Delete, Fetch query helper methods
 - Database transactions
 
 ## Installation
