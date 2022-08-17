@@ -73,6 +73,7 @@ Select data
 
 ```php
 $db->query('SELECT * FROM songs')->all()
+$db->query('SELECT * FROM songs WHERE id = ?', [1])->one()
 ```
 
 
@@ -120,11 +121,18 @@ $db->query('SELECT * FROM songs')->all()
 ```php
  $db->query($sql, $params = [])
 ```
-#### Get total nunmber of rows
+#### Get total nunmber of affected rows
 
 ```php
- $db->getNumRows()
+ $db->getAffectedRows()
 ```
+
+#### Get last insert id
+
+```php
+ $db->lastInsertId()
+```
+
 #### Get single record as an array
 
 ```php

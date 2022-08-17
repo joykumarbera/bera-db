@@ -139,7 +139,7 @@ class Db {
      * @param string $table
      * @param array $data
      * 
-     * @return Db
+     * @return int|bool
      */
     public function insert($table, $data = [])
     {
@@ -152,7 +152,21 @@ class Db {
         $value_placeholder = rtrim($value_placeholder, ', ');
         $sql = "INSERT INTO $table ( `" . implode('`,`', $columns ) ."` )  VALUES( $value_placeholder )";
 
-        return $this->query($sql, $values);
+        if( $this->_runQuery($sql, $values) ) {
+            return $this->lastInsertId();
+        }
+
+        return false;
+    }
+
+    /**
+     * Get last insert id
+     * 
+     * @return int
+     */
+    public function lastInsertId()
+    {
+        return $this->stmt->insert_id;
     }
     
     /**
@@ -162,7 +176,7 @@ class Db {
      * @param array $data
      * @param array $conditions
      * 
-     * @return Db
+     * @return int|bool
      */
     public function update($table, $data = [], $conditions = [], $glue = 'AND')
     {
@@ -179,15 +193,19 @@ class Db {
             foreach($conditions as $key => $value) {
                 $where_clause .= '`' . $key . '`' . ' = ' . '? ' . $glue;
             }
-
             $where_clause = rtrim($where_clause, " $glue");
         } else {
             $where_clause = 1;
         }
 
         $sql = "UPDATE $table SET $update_columns WHERE $where_clause";
+        $final_params = array_merge( array_values($data), array_values($conditions));
 
-        return $this->query($sql, array_merge( array_values($data), array_values($conditions)));
+        if( $this->_runQuery($sql, $final_params) ) {
+            return $this->getAffectedRows();
+        }
+
+        return false;
     }
 
     /**
@@ -196,7 +214,7 @@ class Db {
      * @param string $table
      * @param array $conditions
      * 
-     * @return Db
+     * @return int|bool
      */
     public function delete($table, $conditions=[], $glue = 'AND')
     {
@@ -213,7 +231,11 @@ class Db {
 
         $sql = "DELETE FROM $table WHERE $where_clause";
 
-        return $this->query($sql, array_values($conditions));
+        if( $this->_runQuery($sql, array_values($conditions)) ) {
+            return $this->getAffectedRows();
+        }
+
+        return false;
     }
 
     /**
@@ -251,8 +273,26 @@ class Db {
     public function query($sql, $params = [])
     {
         $this->sql = $sql;
+        if($this->_runQuery($this->sql, $params)) {
+            return $this;
+        } else {
+            throw new DbErrorException("DB error :: " . $this->stmt->error);
+        }
+    }
+    
+    /**
+     * Run the actual query
+     * 
+     * @param string $sql
+     * @param array $params
+     * 
+     * @return bool
+     * @throws DbErrorException
+     */
+    private function _runQuery($sql, $params)
+    {
         try {
-            $this->stmt = $this->con->prepare($this->sql);
+            $this->stmt = $this->con->prepare($sql);
             if($this->stmt === false) {
                 throw new DbErrorException('DB error :: ' . $this->con->error );
             }
@@ -279,18 +319,18 @@ class Db {
 
         if($this->stmt->execute()) {
             $this->query_result = $this->stmt->get_result();
-            return $this;
+            return true;
         } else {
             throw new DbErrorException("DB error :: " . $this->stmt->error);
         }
     }
 
     /**
-     * Get total nunmber of rows
+     * Get total nunmber of rows affected rows
      * 
      * @return int
      */
-    public function getNumRows() 
+    public function getAffectedRows() 
     {
         if( $this->stmt == null ) {
             return 0;
