@@ -293,9 +293,6 @@ class Db {
     {
         try {
             $this->stmt = $this->con->prepare($sql);
-            if($this->stmt === false) {
-                throw new DbErrorException('DB error :: ' . $this->con->error );
-            }
         } catch(mysqli_sql_exception $e) {
             throw new DbErrorException('DB error :: ' . $this->con->error );
         }
@@ -317,11 +314,12 @@ class Db {
             $this->stmt->bind_param($type_str, ...$params);
         }
 
-        if($this->stmt->execute()) {
+        try {
+            $this->stmt->execute();
             $this->query_result = $this->stmt->get_result();
             return true;
-        } else {
-            throw new DbErrorException("DB error :: " . $this->stmt->error);
+        } catch(mysqli_sql_exception $e) {
+            throw new DbErrorException("DB error :: " . $e->getMessage());
         }
     }
 
