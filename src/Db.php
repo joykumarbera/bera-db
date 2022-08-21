@@ -324,6 +324,64 @@ class Db {
     }
 
     /**
+     * Find one record from a table
+     * 
+     * @param string $table
+     * @param array $conditions
+     * @param string $glue
+     * @return object|array
+     */
+    public function findOne($table, $conditions = [], $glue = 'AND', $as = 'object')
+    {
+        if(!empty($conditions)) {
+            $where_clause = '';
+            foreach($conditions as $key => $value) {
+                $where_clause .= '`' . $key . '`' . ' = ' . '? ' . $glue;
+            }
+            $where_clause = rtrim($where_clause, " $glue");
+        } else {
+            $where_clause = 1;
+        }
+
+        $sql = "SELECT * FROM `$table` WHERE $where_clause";
+
+        $this->_runQuery($sql, array_values($conditions));
+
+        if($as == 'object') {
+            return $this->oneAsObject();
+        }
+
+        return $this->one();
+    }
+
+    /**
+     * Find all records from a table
+     * 
+     * @param string $table
+     * @param array $conditions
+     * @param string $glue
+     * @return array
+     */
+    public function findAll($table, $conditions = [], $glue='AND')
+    {
+        if(!empty($conditions)) {
+            $where_clause = '';
+            foreach($conditions as $key => $value) {
+                $where_clause .= '`' . $key . '`' . ' = ' . '? ' . $glue;
+            }
+            $where_clause = rtrim($where_clause, " $glue");
+        } else {
+            $where_clause = 1;
+        }
+
+        $sql = "SELECT * FROM `$table` WHERE $where_clause";
+
+        $this->_runQuery($sql, array_values($conditions));
+
+        return $this->all();
+    }
+
+    /**
      * Get total nunmber of rows affected rows
      * 
      * @return int

@@ -74,6 +74,8 @@ Select data
 ```php
 $db->query('SELECT * FROM songs')->all()
 $db->query('SELECT * FROM songs WHERE id = ?', [1])->one()
+$db->findAll('songs');
+$db->findOne('songs', ['id' => 1]);
 ```
 
 
@@ -133,20 +135,31 @@ $db->query('SELECT * FROM songs WHERE id = ?', [1])->one()
  $db->lastInsertId()
 ```
 
-#### Get single record as an array
+#### Get single record as an array after query
 
 ```php
  $db->query($sql, $params = [])->one()
 ```
-#### Get single record as an object
+#### Get single record as an object after query
 
 ```php
  $db->query($sql, $params = [])->oneAsObject()
 ```
-#### Get all records
+#### Get all records as an array after query
 
 ```php
  $db->query($sql, $params = [])->all()
+
+```
+#### Get a single record using a table name
+
+```php
+ $db->findOne($table, $conditions = [], $glue = 'AND', $as = 'object');
+```
+#### Get all records using a table name
+
+```php
+ $db->findOne($table, $conditions = [], $glue = 'AND');
 ```
 #### Begin a db transaction
 
