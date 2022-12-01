@@ -81,7 +81,7 @@ $db->findOne('songs', ['id' => 1]);
 
 ## API Reference
 
-#### Connect to database
+#### Connect to a database
 
 ```php
  $db = new Db('music_app', 'localhost', 'root', '', null, true);
@@ -159,7 +159,7 @@ $db->findOne('songs', ['id' => 1]);
 #### Get all records using a table name
 
 ```php
- $db->findOne($table, $conditions = [], $glue = 'AND');
+ $db->findAll($table, $conditions = [], $glue = 'AND');
 ```
 #### Begin a db transaction
 
