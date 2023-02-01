@@ -201,11 +201,7 @@ class Db {
         $sql = "UPDATE $table SET $update_columns WHERE $where_clause";
         $final_params = array_merge( array_values($data), array_values($conditions));
 
-        if( $this->_runQuery($sql, $final_params) ) {
-            return $this->getAffectedRows();
-        }
-
-        return false;
+        $this->_runQuery($sql, $final_params);
     }
 
     /**
