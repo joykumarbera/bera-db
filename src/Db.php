@@ -201,7 +201,7 @@ class Db {
         $sql = "UPDATE $table SET $update_columns WHERE $where_clause";
         $final_params = array_merge( array_values($data), array_values($conditions));
 
-        $this->_runQuery($sql, $final_params);
+        return $this->_runQuery($sql, $final_params);
     }
 
     /**
